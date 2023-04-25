@@ -103,65 +103,83 @@ class PropertyStore
         //# Scan using an ascii pattern - it's binary data we're looking
         //# at, so we don't want to look for unicode characters        
         $guids  = [PropertySetConstants::PS_PUBLIC_STRINGS()];
-        $rawGuid = str_split($knownPpsObj['guids']->getData(), 16);
-        foreach ($rawGuid as $guid) {
-            if (strlen($guid) == 16) {
-                $guids[] = OleGuid::fromBytes($guid);
+
+        if (isset($knownPpsObj['guids'])) {
+            $rawGuid = str_split($knownPpsObj['guids']->getData(), 16);
+            foreach ($rawGuid as $guid) {
+                if (strlen($guid) == 16) {
+                    $guids[] = OleGuid::fromBytes($guid);
+                }
             }
         }
+
+        $properties = [];
 
         //# parse names.
         //# the string ids for named properties
         //# they are no longer parsed, as they're referred to by offset not
         //# index. they are simply sequentially packed, as a long, giving
         //# the string length, then padding to 4 byte multiple, and repeat.
-        $namesData = $knownPpsObj['names']->getData();
+        if (isset($knownPpsObj['names'])) {
+            $namesData = $knownPpsObj['names']->getData();
 
-        //# parse actual props.
-        //# not sure about any of this stuff really.
-        //# should flip a few bits in the real msg, to get a better understanding of how this works.
-        //# Scan using an ascii pattern - it's binary data we're looking
-        //# at, so we don't want to look for unicode characters
-        $propsData = $knownPpsObj['props']->getData();
-        $properties = [];
-        foreach (str_split($propsData, 8) as $idx => $rawProp) {
-            if (strlen($rawProp) < 8) break;
+            //# parse actual props.
+            //# not sure about any of this stuff really.
+            //# should flip a few bits in the real msg, to get a better understanding of how this works.
+            //# Scan using an ascii pattern - it's binary data we're looking
+            //# at, so we don't want to look for unicode characters
+            if (isset($knownPpsObj['props'])) {
+                $propsData = $knownPpsObj['props']->getData();
 
-            $d      = unpack('vflags/voffset', substr($rawProp, 4));
-            $flags  = $d['flags'];
-            $offset = $d['offset'];
+                foreach (str_split($propsData, 8) as $idx => $rawProp) {
+                    if (strlen($rawProp) < 8) {
+                        break;
+                    }
 
-            //# the property will be serialised as this pseudo property, mapping it to this named property
-            $pseudo_prop = 0x8000 + $offset;
-            $named = ($flags & 1 == 1);
-            $prop  = '';
-            if ($named) {
-                $str_off = unpack('V', $rawProp)[1];
-                if (strlen($namesData) - $str_off < 4) continue; // not sure with this, but at least it will not read outside the bounds and crash
-                $len = unpack('V', substr($namesData, $str_off, 4))[1];
-                $data = substr($namesData, $str_off + 4, $len);
-                $prop = mb_convert_encoding($data, 'UTF-8', 'UTF-16LE');
-            }
-            else {
-                $d = unpack('va/vb', $rawProp);
-                if ($d['b'] != 0) {
-                    $this->logger->Debug("b not 0");
+                    $d = unpack('vflags/voffset', substr($rawProp, 4));
+                    $flags = $d['flags'];
+                    $offset = $d['offset'];
+
+                    //# the property will be serialised as this pseudo property, mapping it to this named property
+                    $pseudo_prop = 0x8000 + $offset;
+                    $named = ($flags & 1 == 1);
+                    $prop = '';
+
+                    if ($named) {
+                        $str_off = unpack('V', $rawProp)[1];
+
+                        if (strlen($namesData) - $str_off < 4) {
+                            continue;
+                        } // not sure with this, but at least it will not read outside the bounds and crash
+
+                        $len = unpack('V', substr($namesData, $str_off, 4))[1];
+                        $data = substr($namesData, $str_off + 4, $len);
+                        $prop = mb_convert_encoding($data, 'UTF-8', 'UTF-16LE');
+                    } else {
+                        $d = unpack('va/vb', $rawProp);
+
+                        if ($d['b'] != 0) {
+                            $this->logger->Debug("b not 0");
+                        }
+                        $prop = $d['a'];
+                    }
+
+                    //# a bit sus
+                    $guid_off = $flags >> 1;
+
+                    if (!isset($guids[$guid_off - 2])) {
+                        return;
+                    }
+
+                    $guid = $guids[$guid_off - 2];
+
+                    /*$properties[] = [
+                        'key' => new PropertyKey($prop, $guid),
+                        'prop' => $pseudo_prop,
+                    ];*/
+                    $properties[$pseudo_prop] = new PropertyKey($prop, $guid);
                 }
-                $prop = $d['a'];
             }
-
-            //# a bit sus
-            $guid_off = $flags >> 1;
-            if (!isset($guids[$guid_off - 2]))
-                return;
-            $guid = $guids[$guid_off - 2];
-
-            /*$properties[] = [
-                'key' => new PropertyKey($prop, $guid),
-                'prop' => $pseudo_prop,
-            ];*/
-            $properties[$pseudo_prop] = new PropertyKey($prop, $guid);
-					
         }
         
 
@@ -169,7 +187,6 @@ class PropertyStore
 		//#	pp [:unknown, child.name, child.data.unpack('H*')[0].scan(/.{16}/m)]
         //print_r($properties);
         return $properties;
-
     }
 
     protected function parseSubstg($key, $encoding, $offset, $obj)
