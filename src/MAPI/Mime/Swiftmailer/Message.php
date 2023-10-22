@@ -7,12 +7,10 @@ use Hfig\MAPI\Mime\HeaderCollection;
 use Hfig\MAPI\Mime\MimeConvertible;
 use Hfig\MAPI\Mime\Swiftmailer\Adapter\DependencySet;
 
-
 // maybe should use decorator pattern? lots to reimplement then though
 
 class Message extends BaseMessage implements MimeConvertible
 {
-
     public static function wrap(BaseMessage $message)
     {
         if ($message instanceof MimeConvertible) {
@@ -21,14 +19,13 @@ class Message extends BaseMessage implements MimeConvertible
 
         return new self($message->obj, $message->parent);
     }
-    
+
     public function toMime()
     {
         DependencySet::register();
 
         $message = new \Swift_Message();
         $message->setEncoder(new \Swift_Mime_ContentEncoder_RawContentEncoder());
-        
 
         // get headers
         $headers = $this->translatePropertyHeaders();
@@ -50,14 +47,12 @@ class Message extends BaseMessage implements MimeConvertible
         $this->addRecipientHeaders('From', $headers, $add);
         $headers->unset('From');
 
-
         $message->setId(trim($headers->getValue('Message-ID'), '<>'));
         $message->setDate(new \DateTime($headers->getValue('Date')));
         if ($boundary = $this->getMimeBoundary($headers)) {
             $message->setBoundary($boundary);
         }
 
-        
         $headers->unset('Message-ID');
         $headers->unset('Date');
         $headers->unset('Mime-Version');
@@ -66,29 +61,26 @@ class Message extends BaseMessage implements MimeConvertible
         $add = [$message->getHeaders(), 'addTextHeader'];
         $this->addPlainHeaders($headers, $add);
 
-
         // body
         $hasHtml = false;
         $bodyBoundary = '';
         if ($boundary) {
             if (preg_match('~^_(\d\d\d)_([^_]+)_~', $boundary, $matches)) {
-                $bodyBoundary = sprintf('_%03d_%s_', (int)$matches[1]+1, $matches[2]);                
-            }
-        }               
-        try {
-            $html = $this->getBodyHTML();
-            if ($html) {                
-                $hasHtml = true;
+                $bodyBoundary = sprintf('_%03d_%s_', (int) $matches[1] + 1, $matches[2]);
             }
         }
-        catch (\Exception $e) {
+        try {
+            $html = $this->getBodyHTML();
+            if ($html) {
+                $hasHtml = true;
+            }
+        } catch (\Exception $e) {
             // ignore invalid HTML body
         }
 
-        if (!$hasHtml) {
+        if (! $hasHtml) {
             $message->setBody($this->getBody(), 'text/plain');
-        }
-        else {
+        } else {
             // build multi-part
             // (simple method is to just call addPart() on message but we can't control the ID
             $multipart = new \Swift_Attachment();
@@ -102,11 +94,9 @@ class Message extends BaseMessage implements MimeConvertible
             $part = new \Swift_MimePart($html, 'text/html', null);
             $part->setEncoder($message->getEncoder());
 
-
             $message->attach($multipart);
             $multipart->setChildren(array_merge($multipart->getChildren(), [$part]));
         }
-            
 
         // attachments
         foreach ($this->getAttachments() as $a) {
@@ -121,7 +111,7 @@ class Message extends BaseMessage implements MimeConvertible
 
     public function toMimeString(): string
     {
-        return (string)$this->toMime();
+        return (string) $this->toMime();
     }
 
     public function copyMimeToStream($stream)
@@ -138,17 +128,15 @@ class Message extends BaseMessage implements MimeConvertible
             return;
         }
 
-        if (!is_array($recipient)) {
+        if (! is_array($recipient)) {
             $recipient = [$recipient];
         }
-        
 
         $map = [];
         foreach ($recipient as $r) {
             if (preg_match('/^((?:"[^"]*")|.+) (<.+>)$/', $r, $matches)) {
                 $map[trim($matches[2], '<>')] = $matches[1];
-            }
-            else {
+            } else {
                 $map[] = $r;
             }
         }
@@ -158,20 +146,18 @@ class Message extends BaseMessage implements MimeConvertible
 
     protected function addPlainHeaders(HeaderCollection $headers, callable $add)
     {
-        foreach ($headers as $key => $value)
-        {
+        foreach ($headers as $key => $value) {
             if (is_array($value)) {
                 foreach ($value as $ikey => $ivalue) {
                     $header = $ivalue->rawkey;
-                    $value  = $ivalue->value;
+                    $value = $ivalue->value;
                     $add($header, $value);
-                }                
-            }
-            else {
+                }
+            } else {
                 $header = $value->rawkey;
-                $value  = $value->value;
+                $value = $value->value;
                 $add($header, $value);
-            }            
+            }
         }
     }
 
@@ -185,38 +171,35 @@ class Message extends BaseMessage implements MimeConvertible
 
         $transportRaw = explode("\r\n", $this->properties['transport_message_headers']);
         foreach ($transportRaw as $v) {
-            if (!$v) continue;
+            if (! $v) {
+                continue;
+            }
 
             if ($v[0] !== "\t" && $v[0] !== ' ') {
                 $transportKey++;
                 $transport[$transportKey] = $v;
-            }
-            else {
-                $transport[$transportKey] = $transport[$transportKey] . "\r\n" . $v;
+            } else {
+                $transport[$transportKey] = $transport[$transportKey]."\r\n".$v;
             }
         }
 
         foreach ($transport as $header) {
-            $rawHeaders->add($header);            
+            $rawHeaders->add($header);
         }
 
-
-
-        // sender        
-        $senderType = $this->properties['sender_addrtype'];        
+        // sender
+        $senderType = $this->properties['sender_addrtype'];
         if ($senderType == 'SMTP') {
             $rawHeaders->set('From', $this->getSender());
-        }
-        elseif (!$rawHeaders->has('From')) {
+        } elseif (! $rawHeaders->has('From')) {
             if ($from = $this->getSender()) {
                 $rawHeaders->set('From', $from);
             }
         }
 
-
         // recipients
         foreach ($this->getRecipients() as $r) {
-            $rawHeaders->add($r->getType(), (string)$r);
+            $rawHeaders->add($r->getType(), (string) $r);
         }
 
         // subject - preference to msg properties
@@ -225,10 +208,10 @@ class Message extends BaseMessage implements MimeConvertible
         }
 
         // date - preference to transport headers
-        if (!$rawHeaders->has('Date')) {
+        if (! $rawHeaders->has('Date')) {
             $date = $this->properties['message_delivery_time'] ?? $this->properties['client_submit_time']
                 ?? $this->properties['last_modification_time'] ?? $this->properties['creation_time'] ?? null;
-            if (!is_null($date)) {
+            if (! is_null($date)) {
                 // ruby-msg suggests this is stored as an iso8601 timestamp in the message properties, not a Windows timestamp
                 $date = date('r', strtotime($date));
                 $rawHeaders->set('Date', $date);
@@ -239,39 +222,45 @@ class Message extends BaseMessage implements MimeConvertible
         $map = [
             ['internet_message_id', 'Message-ID'],
             ['in_reply_to_id',      'In-Reply-To'],
-            
-            ['importance',          'Importance',  function($val) { return ($val == '1') ? null : $val; }],
-            ['priority',            'Priority',    function($val) { return ($val == '1') ? null : $val; }],
-            ['sensitivity',         'Sensitivity', function($val) { return ($val == '0') ? null : $val; }],
-            
+
+            ['importance',          'Importance',  function ($val) {
+            return ($val == '1') ? null : $val;
+            }],
+            ['priority',            'Priority',    function ($val) {
+            return ($val == '1') ? null : $val;
+            }],
+            ['sensitivity',         'Sensitivity', function ($val) {
+            return ($val == '0') ? null : $val;
+            }],
+
             ['conversation_topic',  'Thread-Topic'],
-            
+
             //# not sure of the distinction here
             //# :originator_delivery_report_requested ??
-            ['read_receipt_requested', 'Disposition-Notification-To', function($val) use ($rawHeaders) { 
+            ['read_receipt_requested', 'Disposition-Notification-To', function ($val) use ($rawHeaders) {
                 $from = $rawHeaders->getValue('From');
 
                 if (preg_match('/^((?:"[^"]*")|.+) (<.+>)$/', $from, $matches)) {
                     $from = trim($matches[2], '<>');
                 }
-                return $from;            
-            }]
+
+                return $from;
+            }],
         ];
         foreach ($map as $do) {
             $value = $this->properties[$do[0]];
             if (isset($do[2])) {
                 $value = $do[2]($value);
             }
-            if (!is_null($value)) {
+            if (! is_null($value)) {
                 $rawHeaders->set($do[1], $value);
             }
         }
 
         return $rawHeaders;
-
     }
 
-    protected function getMimeBoundary(HeaderCollection $headers) 
+    protected function getMimeBoundary(HeaderCollection $headers)
     {
         // firstly - use the value in the headers
         if ($type = $headers->getValue('Content-Type')) {
@@ -283,12 +272,13 @@ class Message extends BaseMessage implements MimeConvertible
         // if never sent via SMTP then it has to be synthesised
         // this is done using the message id
         if ($mid = $headers->getValue('Message-ID')) {
-            $recount = 0; 
+            $recount = 0;
             $mid = preg_replace('~[^a-zA-z0-9\'()+_,-.\/:=? ]~', '', $mid, -1, $recount);
             $mid = substr($mid, 0, 55);
+
             return sprintf('_%03d_%s_', $recount, $mid);
         }
+
         return '';
     }
-
 }

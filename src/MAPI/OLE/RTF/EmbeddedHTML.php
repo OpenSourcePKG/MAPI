@@ -22,24 +22,20 @@ class EmbeddedHTML
             return '';
         }
 
-        while (!$scanner->eos()) {
+        while (! $scanner->eos()) {
             //echo 'next 40 ' .  str_pad(str_replace(["\r","\n"], '', trim(substr((string)$scanner, 0, 40))), 40) . '          ';
 
             if ($scanner->scan('{')) {
                 //echo 'skip {';
-            }
-            elseif ($scanner->scan('}')) {
+            } elseif ($scanner->scan('}')) {
                 //echo 'skip }';
-            }
-            
-            elseif ($scanner->scanRegex('/\x5c\*\x5chtmltag(\d+) ?/')) {
+            } elseif ($scanner->scanRegex('/\x5c\*\x5chtmltag(\d+) ?/')) {
                 if ($ignoreTag == $scanner->result()[1][0]) {
                     //echo 'duplicate. skip to }';
                     $scanner->scanUntil('}');
                     $ignoreTag = '';
                 }
-            }            
-            elseif ($scanner->scanRegex('/\x5c\*\x5cmhtmltag(\d+) ?/')) {
+            } elseif ($scanner->scanRegex('/\x5c\*\x5cmhtmltag(\d+) ?/')) {
                 //echo 'set ignore on this';
                 $ignoreTag = $scanner->result()[1][0];
             }
@@ -47,46 +43,39 @@ class EmbeddedHTML
             elseif ($scanner->scanRegex('/\x5cpar(?!\w) ?/')) {
                 //echo 'CRLF';
                 $html .= "\r\n";
-            }
-            elseif ($scanner->scanRegex('/\x5ctab ?/')) {
+            } elseif ($scanner->scanRegex('/\x5ctab ?/')) {
                 //echo 'Tab';
                 $html .= "\t";
-            }
-            elseif ($scanner->scanRegex('/\x5c\'([0-9A-Za-z]{2})/')) {
+            } elseif ($scanner->scanRegex('/\x5c\'([0-9A-Za-z]{2})/')) {
                 //echo 'Append char' . $scanner->result()[1][0];
                 $html .= chr(hexdec($scanner->result()[1][0]));
-            }
-            elseif ($scanner->scan('\pntext')) {
+            } elseif ($scanner->scan('\pntext')) {
                 //echo 'skip to }';
                 $scanner->scanUntil('}');
-            }
-            elseif ($scanner->scanRegex('/\x5chtmlrtf1? ?/')) {
+            } elseif ($scanner->scanRegex('/\x5chtmlrtf1? ?/')) {
                 //echo 'skip to htmlrtf0';
                 $scanner->scanUntilRegex('/\x5chtmlrtf0 ?/');
             }
             //# a generic throw away unknown tags thing.
-			//# the above 2 however, are handled specially
-			elseif ($scanner->scanRegex('/\x5c[a-z-]+(\d+)? ?/')) {
+            //# the above 2 however, are handled specially
+            elseif ($scanner->scanRegex('/\x5c[a-z-]+(\d+)? ?/')) {
                 //echo 'skip unknown tag';
             }
-			//#elseif ($scanner->scanRegex('/\\li(\d+) ?/')) {}
-			//#elseif ($scanner->scanRegex('/\\fi-(\d+) ?/')) {}
-			elseif ($scanner->scanRegex('/\r?\n/')) {
+            //#elseif ($scanner->scanRegex('/\\li(\d+) ?/')) {}
+            //#elseif ($scanner->scanRegex('/\\fi-(\d+) ?/')) {}
+            elseif ($scanner->scanRegex('/\r?\n/')) {
                 //echo 'data CRLF';
-            }
-			elseif ($scanner->scanRegex('/\x5c({|}|\x5c)/')) {
+            } elseif ($scanner->scanRegex('/\x5c({|}|\x5c)/')) {
                 //echo 'append special char';
                 $html .= $scanner->result()[1][0];
-            }
-            else {
+            } else {
                 //echo 'append';
 
                 $html .= $scanner->increment();
-            }						
+            }
 
             //echo '    ' . substr($html, -20) . "\n";
         }
-
 
         return trim($html);
     }

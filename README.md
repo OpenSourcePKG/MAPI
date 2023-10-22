@@ -17,6 +17,9 @@ Compared to ``ruby-msg``, this library:
 * Has better support for decoding MAPI document properties
 * Produces a more faithful MIME conversion of the MAPI document
 
+## Requirements
+The ``bcmath`` module is required in php. If it is not installed, there is a respectful exception (PHP no longer crashes with a fatal error).
+
 ## Installation
 
 Install using composer

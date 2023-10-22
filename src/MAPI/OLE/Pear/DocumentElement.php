@@ -50,9 +50,9 @@ class DocumentElement implements CompoundDocumentElement
     public function getType()
     {
         static $map = [
-            OLE_PPS_TYPE_ROOT =>  CompoundDocumentElement::TYPE_ROOT,
-            OLE_PPS_TYPE_DIR  =>  CompoundDocumentElement::TYPE_DIRECTORY,
-            OLE_PPS_TYPE_FILE =>  CompoundDocumentElement::TYPE_FILE,
+            OLE_PPS_TYPE_ROOT => CompoundDocumentElement::TYPE_ROOT,
+            OLE_PPS_TYPE_DIR => CompoundDocumentElement::TYPE_DIRECTORY,
+            OLE_PPS_TYPE_FILE => CompoundDocumentElement::TYPE_FILE,
         ];
 
         return $map[$this->pps->Type] ?? null;
@@ -63,31 +63,31 @@ class DocumentElement implements CompoundDocumentElement
         static $map = [
             CompoundDocumentElement::TYPE_ROOT => OLE_PPS_TYPE_ROOT,
             CompoundDocumentElement::TYPE_DIRECTORY => OLE_PPS_TYPE_DIR,
-            CompoundDocumentElement::TYPE_FILE => OLE_PPS_TYPE_FILE ,
+            CompoundDocumentElement::TYPE_FILE => OLE_PPS_TYPE_FILE,
         ];
 
-        if (!isset($map[$type])) {
+        if (! isset($map[$type])) {
             throw new \InvalidArgumentException(sprintf('Unknown document element type "%d"', $type));
         }
 
         $this->pps->Type = $map[$type];
     }
 
-    public function isDirectory() 
+    public function isDirectory()
     {
-        return ($this->getType() == CompoundDocumentElement::TYPE_DIRECTORY);
+        return $this->getType() == CompoundDocumentElement::TYPE_DIRECTORY;
     }
 
-    public function isFile() 
+    public function isFile()
     {
-        return ($this->getType() == CompoundDocumentElement::TYPE_FILE);
+        return $this->getType() == CompoundDocumentElement::TYPE_FILE;
     }
 
-    public function isRoot() 
+    public function isRoot()
     {
-        return ($this->getType() == CompoundDocumentElement::TYPE_ROOT);
+        return $this->getType() == CompoundDocumentElement::TYPE_ROOT;
     }
-    
+
     public function getPreviousIndex()
     {
         return $this->pps->PrevPps;
@@ -107,7 +107,7 @@ class DocumentElement implements CompoundDocumentElement
     {
         $this->pps->NextPps = $index;
     }
- 
+
     public function getFirstChildIndex()
     {
         return $this->pps->DirPps;
@@ -137,13 +137,13 @@ class DocumentElement implements CompoundDocumentElement
     {
         $this->pps->Time2nd = $time;
     }
- 
+
     // private, so no setter interface
     public function getStartBlock()
     {
         return $this->pps->_StartBlock;
     }
-    
+
     public function getSize()
     {
         return $this->pps->Size;
@@ -181,8 +181,6 @@ class DocumentElement implements CompoundDocumentElement
 
     public function saveToStream($stream)
     {
-        
-
         $root = new OLE_PPS_Root($this->pps->Time1st, $this->pps->Time2nd, $this->pps->children);
 
         // nasty Pear_OLE actually writes out a temp file and fpassthru's on it. Yuck.

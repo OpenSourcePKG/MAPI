@@ -8,18 +8,19 @@ class Recipient extends MapiObject
         0 => 'From',
         1 => 'To',
         2 => 'Cc',
-        3 => 'Bcc'
+        3 => 'Bcc',
     ];
 
     //# some kind of best effort guess for converting to standard mime style format.
-	//# there are some rules for encoding non 7bit stuff in mail headers. should obey
-	//# that here, as these strings could be unicode
-	//# email_address will be an EX:/ address (X.400?), unless external recipient. the
-	//# other two we try first.
+    //# there are some rules for encoding non 7bit stuff in mail headers. should obey
+    //# that here, as these strings could be unicode
+    //# email_address will be an EX:/ address (X.400?), unless external recipient. the
+    //# other two we try first.
     //# consider using entry id for this too.
     public function getName()
     {
         $name = $this->properties['transmittable_display_name'] ?? $this->properties['display_name'] ?? '';
+
         return preg_replace('/^\'(.*)\'/', '\1', $name);
     }
 
@@ -44,6 +45,7 @@ class Recipient extends MapiObject
     public function getAddressType()
     {
         $type = $this->properties['addrtype'] ?? 'Unknown';
+
         return $type;
 
         /*if ($this->properties['smtp_address']) {
@@ -56,22 +58,19 @@ class Recipient extends MapiObject
             return 'MAPI';
         }
         return 'Unknown';*/
-
     }
 
     public function __toString()
     {
-        $name  = $this->getName();
+        $name = $this->getName();
         $email = $this->getEmail();
 
         //echo $this->getAddressType() . ': ' . sprintf('%s <%s>', $name, unpack('H*', $email)[1]) . "\n";
 
-        if  ($name && $name != $email) {
+        if ($name && $name != $email) {
             return sprintf('%s <%s>', $name, $email);
-        } 
+        }
+
         return $email ?: $name;
     }
-
-
-
 }

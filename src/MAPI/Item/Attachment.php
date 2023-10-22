@@ -5,6 +5,7 @@ namespace Hfig\MAPI\Item;
 abstract class Attachment extends MapiObject
 {
     protected $embedded_msg = null;
+
     protected $embedded_ole = null;
 
     public function getFilename()
@@ -32,6 +33,4 @@ abstract class Attachment extends MapiObject
 
         $this->embedded_ole->saveToStream($stream);
     }
-
-
 }

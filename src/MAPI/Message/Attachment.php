@@ -4,9 +4,8 @@ namespace Hfig\MAPI\Message;
 
 use Hfig\MAPI\Item\Attachment as AttachmentItem;
 use Hfig\MAPI\OLE\CompoundDocumentElement as Element;
-use Hfig\MAPI\Property\PropertyStore;
 use Hfig\MAPI\Property\PropertySet;
-
+use Hfig\MAPI\Property\PropertyStore;
 
 /**
  * @var PropertySet $properties
@@ -27,7 +26,7 @@ class Attachment extends AttachmentItem
         $this->parent = $parent;
 
         $this->embedded_msg = null;
-        $this->embedded_ole  = null;
+        $this->embedded_ole = null;
         $this->embedded_ole_type = '';
 
         // Set properties
@@ -45,7 +44,6 @@ class Attachment extends AttachmentItem
                     $this->embedded_ole = $child;
                 }
             }
-
         }
 
         if ($this->embedded_ole) {
@@ -54,7 +52,6 @@ class Attachment extends AttachmentItem
                 $this->embedded_msg = new Message($this->embedded_ole, $parent);
             }
         }
-
     }
 
     protected function checkEmbeddedOleType()
@@ -65,7 +62,9 @@ class Attachment extends AttachmentItem
         foreach ($this->embedded_ole->getChildren() as $child) {
             if (preg_match('/__(substg|properties|recip|attach|nameid)/', $child->getName())) {
                 $found++;
-                if ($found > 2) break;
+                if ($found > 2) {
+                    break;
+                }
             }
         }
         if ($found > 2) {
@@ -77,17 +76,14 @@ class Attachment extends AttachmentItem
         }
 
         return $type;
-        
     }
 
     public function getMimeType()
     {
-
         $mime = $this->properties['attach_mime_tag'] ?? $this->embedded_ole_type;
-        if (!$mime) {
+        if (! $mime) {
             $mime = 'application/octet-stream';
         }
-        
 
         return $mime;
     }
@@ -103,6 +99,7 @@ class Attachment extends AttachmentItem
         if (is_null($compobj)) {
             return null;
         }
+
         return substr($compobj, 32);
     }
 

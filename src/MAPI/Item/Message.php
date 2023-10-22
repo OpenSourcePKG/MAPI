@@ -8,5 +8,6 @@ namespace Hfig\MAPI\Item;
 abstract class Message extends MapiObject
 {
     abstract public function getAttachments();
+
     abstract public function getRecipients();
 }

@@ -2,8 +2,8 @@
 
 namespace Hfig\MAPI\OLE\Guid;
 
-use Ramsey\Uuid\UuidFactory;
 use Ramsey\Uuid\Codec\GuidStringCodec;
+use Ramsey\Uuid\UuidFactory;
 use Ramsey\Uuid\UuidInterface as OleGuidInterface;
 
 class OleGuid
@@ -13,7 +13,7 @@ class OleGuid
 
     protected static function getFactory()
     {
-        if (!self::$factory) {
+        if (! self::$factory) {
             self::$factory = new UuidFactory();
             self::$factory->setCodec(
                 new GuidStringCodec(self::$factory->getUuidBuilder())

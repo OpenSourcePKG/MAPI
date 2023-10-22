@@ -17,6 +17,9 @@ class Attachment extends BaseAttachment implements MimeConvertible
         return new self($attachment->obj, $attachment->parent);
     }
 
+    /**
+     * @throws \Exception
+     */
     public function toMime()
     {
         DependencySet::register();
@@ -26,9 +29,8 @@ class Attachment extends BaseAttachment implements MimeConvertible
         if ($this->getMimeType() != 'Microsoft Office Outlook Message') {
             $attachment->setFilename($this->getFilename());
             $attachment->setContentType($this->getMimeType());
-        }
-        else {
-            $attachment->setFilename($this->getFilename() . '.eml');
+        } else {
+            $attachment->setFilename($this->getFilename().'.eml');
             $attachment->setContentType('message/rfc822');
         }
 
@@ -39,8 +41,8 @@ class Attachment extends BaseAttachment implements MimeConvertible
         if ($data = $this->properties['attach_content_location']) {
             $attachment->getHeaders()->addTextHeader('Content-Location', $data);
         }
-        
-        if ($data = $this->properties['attach_content_id'])  {
+
+        if ($data = $this->properties['attach_content_id']) {
             $attachment->setId($data);
         }
 
@@ -48,23 +50,24 @@ class Attachment extends BaseAttachment implements MimeConvertible
             $attachment->setBody(
                 Message::wrap($this->embedded_msg)->toMime()
             );
-        }
-        elseif ($this->embedded_ole) {
+        } elseif ($this->embedded_ole) {
             // in practice this scenario doesn't seem to occur
             // MS Office documents are attached as files not
             // embedded ole objects
             throw new \Exception('Not implemented: saving emebed OLE content');
-        }
-        else {
+        } else {
             $attachment->setBody($this->getData());
         }
 
         return $attachment;
     }
 
+    /**
+     * @throws \Exception
+     */
     public function toMimeString(): string
     {
-        return (string)$this->toMime();
+        return (string) $this->toMime();
     }
 
     public function copyMimeToStream($stream)

@@ -2,9 +2,8 @@
 
 namespace Hfig\MAPI\OLE\Pear;
 
-use Hfig\MAPI\OLE\CompoundDocumentFactory;
 use Hfig\MAPI\OLE\CompoundDocumentElement;
-
+use Hfig\MAPI\OLE\CompoundDocumentFactory;
 use OLE;
 
 class DocumentFactory implements CompoundDocumentFactory

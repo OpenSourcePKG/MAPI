@@ -23,6 +23,7 @@ class PropertyCollection implements \IteratorAggregate
         if (is_null($bucket)) {
             return null;
         }
+
         return $bucket['value'];
     }
 
@@ -33,14 +34,14 @@ class PropertyCollection implements \IteratorAggregate
 
     public function keys()
     {
-        return array_map(function($bucket) {
+        return array_map(function ($bucket) {
             return $bucket['key'];
         }, $this->col);
     }
 
     public function values()
     {
-        return array_map(function($bucket) {
+        return array_map(function ($bucket) {
             return $bucket['value'];
         }, $this->col);
     }
@@ -51,5 +52,4 @@ class PropertyCollection implements \IteratorAggregate
             yield $bucket['key'] => $bucket['value'];
         }
     }
-
 }

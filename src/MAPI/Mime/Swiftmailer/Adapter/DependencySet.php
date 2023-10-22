@@ -2,17 +2,18 @@
 
 namespace Hfig\MAPI\Mime\Swiftmailer\Adapter;
 
-use \Swift_DependencyContainer;
+use Swift_DependencyContainer;
 
-
-class DependencySet {
-
+class DependencySet
+{
     // override the HeaderFactory registration in the DI container
     public static function register($force = false)
     {
         static $registered = false;
 
-        if ($registered && !$force) return;
+        if ($registered && ! $force) {
+            return;
+        }
 
         $container = Swift_DependencyContainer::getInstance();
         $container->register('mime.headerfactory')
@@ -27,5 +28,4 @@ class DependencySet {
 
         $registered = true;
     }
-
 }
